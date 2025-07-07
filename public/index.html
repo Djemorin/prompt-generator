@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flux1-Kontext Prompt Generator</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Prompt Generator</h1>
+
+      <div class="tabs">
+        <button class="tab-button active" data-tab="generator">Generator</button>
+        <button class="tab-button" data-tab="history">History</button>
+      </div>
+
+      <div class="tab-content-wrapper">
+        <div id="generator" class="tab-content active">
+          <div class="form-group">
+            <label for="theme">Theme or Idea</label>
+            <textarea
+              id="theme"
+              placeholder="e.g., A lone astronaut discovering a glowing forest on a distant planet..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="system-prompt-select">Prompt Style</label>
+            <select id="system-prompt-select">
+              <option value="realistic">Realistic Photo</option>
+              <option value="cinematic">Cinematic Scene</option>
+              <option value="drawing">Drawing/Illustration</option>
+              <option value="imageEditing">Image Editing</option>
+              <option value="aiCoding">AI Coding</option>
+              <option value="aceStep">ACE-Step</option>
+              <option value="music">Music</option>
+              <option value="videoSceneWan21">Video Scene (Wan 2.1)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="model-select">AI Model</label>
+            <select id="model-select"></select>
+          </div>
+
+          <div class="button-container">
+            <button id="generate-btn">Generate Prompt</button>
+            <button id="cancel-btn" style="display: none">Cancel</button>
+          </div>
+
+          <div id="loader" class="loader"></div>
+
+          <div class="result-container" style="display: none">
+            <label class="result-label">Generated Prompt:</label>
+            <div id="result" class="result"></div>
+            <button id="copy-btn" class="copy-button">Copy Prompt</button>
+            <div
+              id="copied-msg"
+              style="
+                text-align: center;
+                color: #28a745;
+                margin-top: 1em;
+                display: none;
+              "
+            >
+              Copied!
+            </div>
+          </div>
+        </div>
+
+        <div id="history" class="tab-content">
+          <div class="history-container">
+          <ul id="history-list"></ul>
+        </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let abortController = new AbortController();
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        const modelSelect = document.getElementById("model-select");
+
+        try {
+          const response = await fetch("/api/models");
+          const models = await response.json();
+
+          if (models.length > 0) {
+            models.forEach((model) => {
+              const option = document.createElement("option");
+              option.value = model.name;
+              option.textContent = model.name;
+              modelSelect.appendChild(option);
+            });
+          } else {
+            const option = document.createElement("option");
+            option.textContent = "No models found";
+            option.disabled = true;
+            modelSelect.appendChild(option);
+          }
+        } catch (error) {
+          console.error("Error fetching models:", error);
+          const option = document.createElement("option");
+          option.textContent = "Error loading models";
+          option.disabled = true;
+          modelSelect.appendChild(option);
+        }
+      });
+
+      document
+        .getElementById("generate-btn")
+        .addEventListener("click", async () => {
+          const theme = document.getElementById("theme").value.trim();
+          const systemPrompt = document.getElementById(
+            "system-prompt-select"
+          ).value;
+          const model = document.getElementById("model-select").value;
+
+          if (!theme) {
+            alert("Please enter a theme!");
+            return;
+          }
+
+          const generateBtn = document.getElementById("generate-btn");
+          const cancelBtn = document.getElementById("cancel-btn");
+          const loader = document.getElementById("loader");
+          const resultContainer = document.querySelector(".result-container");
+          const resultDiv = document.getElementById("result");
+          const copyBtn = document.getElementById("copy-btn");
+          const copiedMsg = document.getElementById("copied-msg");
+
+          generateBtn.style.display = "none";
+          cancelBtn.style.display = "inline-block";
+          loader.style.display = "block";
+          resultContainer.style.display = "none";
+          copiedMsg.style.display = "none";
+
+          abortController = new AbortController();
+          const signal = abortController.signal;
+
+          try {
+            const response = await fetch("/generate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ theme, systemPrompt, model }),
+              signal,
+            });
+
+            const data = await response.json();
+            resultDiv.textContent = data.prompt || "Failed to generate prompt.";
+            resultContainer.style.display = "block";
+          } catch (err) {
+            if (err.name === "AbortError") {
+              resultDiv.textContent = "Generation cancelled.";
+            } else {
+              resultDiv.textContent = "Error: " + err.message;
+            }
+            resultContainer.style.display = "block";
+          } finally {
+            generateBtn.style.display = "inline-block";
+            cancelBtn.style.display = "none";
+            loader.style.display = "none";
+            loadHistory();
+          }
+        });
+
+      document.getElementById("cancel-btn").addEventListener("click", () => {
+        abortController.abort();
+      });
+
+      document.getElementById("copy-btn").addEventListener("click", () => {
+        const text = document.getElementById("result").innerText;
+        navigator.clipboard.writeText(text).then(() => {
+          const copiedMsg = document.getElementById("copied-msg");
+          copiedMsg.style.display = "block";
+          setTimeout(() => {
+            copiedMsg.style.display = "none";
+          }, 2000);
+        });
+      });
+
+      async function loadHistory() {
+        const historyList = document.getElementById("history-list");
+        historyList.innerHTML = ""; // Clear existing history
+
+        try {
+          const response = await fetch("/api/history");
+          const history = await response.json();
+
+          if (history.length === 0) {
+            historyList.innerHTML = "<li>No history yet.</li>";
+            return;
+          }
+
+          // Newest first
+          history.reverse();
+
+          history.forEach((item) => {
+            const li = document.createElement("li");
+            li.className = "history-item";
+            li.innerHTML = `
+              <button class="delete-btn" data-timestamp="${item.timestamp}">&times;</button>
+              <p><strong>Prompt:</strong> ${item.user_prompt}</p>
+              <p><strong>Style:</strong> ${item.prompt_style}</p>
+              <p><strong>Model:</strong> ${item.model}</p>
+              <p><strong>Response:</strong></p>
+              <div class="result">${item.model_response}</div>
+            `;
+            historyList.appendChild(li);
+          });
+
+          document.querySelectorAll(".delete-btn").forEach((button) => {
+            button.addEventListener("click", async (e) => {
+              const timestamp = e.target.dataset.timestamp;
+              if (confirm("Are you sure you want to delete this item?")) {
+                try {
+                  const response = await fetch(
+                    `/api/history/${timestamp}`,
+                    {
+                      method: "DELETE",
+                    }
+                  );
+                  if (response.ok) {
+                    loadHistory();
+                  } else {
+                    alert("Failed to delete history item.");
+                  }
+                } catch (error) {
+                  console.error("Error deleting history item:", error);
+                  alert("Error deleting history item.");
+                }
+              }
+            });
+          });
+        } catch (error) {
+          console.error("Error loading history:", error);
+          historyList.innerHTML = "<li>Error loading history.</li>";
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", loadHistory);
+
+      document.querySelectorAll(".tab-button").forEach((button) => {
+        button.addEventListener("click", () => {
+          document.querySelectorAll(".tab-button").forEach((btn) => {
+            btn.classList.remove("active");
+          });
+          button.classList.add("active");
+
+          document.querySelectorAll(".tab-content").forEach((content) => {
+            content.classList.remove("active");
+          });
+          document.getElementById(button.dataset.tab).classList.add("active");
+        });
+      });
+    </script>
+  </body>
+</html>

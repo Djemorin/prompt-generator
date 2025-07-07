@@ -1,0 +1,12 @@
+{
+  "name": "prompt-generator",
+  "version": "1.0.0",
+  "description": "Generate prompts for Flux1-Kontext",
+  "main": "server/generate-prompts.js",
+  "scripts": {
+    "start": "node server/generate-prompts.js"
+  },
+  "dependencies": {
+    "express": "^4.18.1"
+  }
+}
