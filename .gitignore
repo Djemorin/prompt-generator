@@ -16,3 +16,6 @@ package-lock.json
 
 # Data files
 /server/prompt-history.json
+
+# Build output
+/dist
