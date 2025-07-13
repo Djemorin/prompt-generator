@@ -6,6 +6,8 @@ This project is a web-based application designed to generate tailored prompts fo
 
 The backend is a Node.js server that communicates with a local Ollama instance to fetch available AI models and generate the final prompts.
 
+To review the latest changes and updates on this project, please check the GEMINI.md file.
+
 ## 2. Features
 
 - **Dynamic AI Model Loading:** Automatically fetches and displays a list of available AI models from the local Ollama service.
