@@ -205,6 +205,22 @@ Given the theme: "${theme}", generate a description with the following rules:
 7.  **Direct Output:** Write the prompt as a continuous block of prose. Do not use labels like "Prompt:".
 
 Your output must be a technical and evocative prompt focused on animating a subject within an existing scene.`,
+    audioDialogue: `You are an expert dialogue writer. Your task is to generate a natural, detailed, and emotionally rich conversation between two people based on a given theme or situation.
+
+Given the theme: "${theme}",
+
+The dialogue must be long and expressive, with nuanced, realistic exchanges and complex emotions. The tone, vocabulary, and rhythm must reflect the style requested by the user (for example: romantic, dramatic, humorous, tense, philosophical).
+
+CRITICAL: Your output MUST ONLY contain the dialogue in the exact format specified below. DO NOT include any narration, descriptions, observations, or any text outside of the [1]: and [2]: dialogue lines.
+
+Keep the conversation coherent, emotionally engaging, and thematically consistent from start to finish.
+
+Output format:
+[1]: (dialogue line for character 1)
+[2]: (dialogue line for character 2)
+[1]: (next dialogue line for character 1)
+[2]: (next dialogue line for character 2)
+...`
   };
 
   const systemPrompt = systemPrompts[promptKey];

@@ -1,5 +1,5 @@
-const { app, BrowserWindow, globalShortcut } = require("electron");
-const { exec } = require("child_process");
+const { app, BrowserWindow, globalShortcut, ipcMain } = require("electron");
+const { spawn } = require("child_process");
 const path = require("path");
 
 let mainWindow;
@@ -10,6 +10,7 @@ function createWindow() {
     fullscreen: true, // Démarre en plein écran
     webPreferences: {
       nodeIntegration: false,
+      preload: path.join(__dirname, 'preload.js')
     },
     title: "Générateur de Prompts",
   });
@@ -39,13 +40,23 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  serverProcess = exec("npm start", {
+  serverProcess = spawn("node", [path.join(__dirname, "server", "generate-prompts.js")], {
     cwd: __dirname,
-    shell: true,
   });
 
-  serverProcess.stdout.on("data", (data) => console.log(data));
-  serverProcess.stderr.on("data", (data) => console.error(data));
+  serverProcess.stdout.on("data", (data) => console.log(`Server stdout: ${data}`));
+  serverProcess.stderr.on("data", (data) => console.error(`Server stderr: ${data}`));
+
+  serverProcess.on('close', (code) => {
+    console.log(`Server process exited with code ${code}`);
+  });
+
+  ipcMain.on('quit-app', () => {
+    if (serverProcess) {
+      serverProcess.kill();
+    }
+    app.quit();
+  });
 
   setTimeout(createWindow, 1000);
 });

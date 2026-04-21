@@ -19,6 +19,7 @@ The backend is a Node.js server that communicates with a local Ollama instance t
     *   AI Coding
     *   ACE-Step (Instrumental Music)
     *   Music (Keyword-based)
+    *   Audio Dialogue
 *   **Web Interface:** A clean, single-page user interface with tabs for the generator and history.
 *   **Backend API:** An Express.js-based API that handles the logic for prompt generation and history management.
 *   **Asynchronous Operations:** Supports non-blocking prompt generation with a cancellation feature.
@@ -29,6 +30,7 @@ The backend is a Node.js server that communicates with a local Ollama instance t
     *   `F11`: Toggle fullscreen mode.
     *   `Esc`: Exit fullscreen mode.
     *   `Ctrl+Q`: Quit the application.
+    *   **Exit App Button:** Closes the application and terminates the backend server.
 
 ## 3. Technologies Used
 
